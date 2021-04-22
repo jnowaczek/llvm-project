@@ -1,3 +1,5 @@
+add_llvm_component_group(MBlaze)
+
 set(LLVM_TARGET_DEFINITIONS MBlaze.td)
 
 tablegen(LLVM MBlazeGenRegisterInfo.inc -gen-register-info)
@@ -26,6 +28,22 @@ add_llvm_target(MBlazeCodeGen
   MBlazeSelectionDAGInfo.cpp
   MBlazeAsmPrinter.cpp
   MBlazeMCInstLower.cpp
+
+  LINK_COMPONENTS
+  Analysis
+  AsmPrinter
+  CodeGen
+  Core
+  MC
+  SelectionDAG
+  MBlazeDesc
+  MBlazeInfo
+  Support
+  Target
+  GlobalISel
+
+  ADD_TO_COMPONENT
+  MBlaze
   )
 
 add_dependencies(LLVMMBlazeCodeGen intrinsics_gen)
