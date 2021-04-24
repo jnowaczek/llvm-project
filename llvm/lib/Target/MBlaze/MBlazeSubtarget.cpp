@@ -11,6 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define DEBUG_TYPE "mblaze-subtarget"
+
 #include "MBlazeSubtarget.h"
 #include "MBlaze.h"
 #include "MBlazeRegisterInfo.h"
@@ -23,23 +25,23 @@
 
 using namespace llvm;
 
-MBlazeSubtarget::MBlazeSubtarget(const std::string &TT,
-                                 const std::string &CPU,
-                                 const std::string &FS):
-  MBlazeGenSubtargetInfo(TT, CPU, FS),
+MBlazeSubtarget::MBlazeSubtarget(StringRef CPU,
+                                 StringRef TuneCPU,
+                                 StringRef FS):
+  MBlazeGenSubtargetInfo(getTargetTriple(), CPU, TuneCPU, FS),
   HasBarrel(false), HasDiv(false), HasMul(false), HasPatCmp(false),
   HasFPU(false), HasMul64(false), HasSqrt(false)
 {
   // Parse features string.
-  std::string CPUName = CPU;
+  std::string CPUName = CPU.str();
   if (CPUName.empty())
     CPUName = "mblaze";
-  ParseSubtargetFeatures(CPUName, FS);
+  ParseSubtargetFeatures(CPUName, TuneCPU, FS);
 
   // Only use instruction scheduling if the selected CPU has an instruction
   // itinerary (the default CPU is the only one that doesn't).
   HasItin = CPUName != "mblaze";
-  DEBUG(dbgs() << "CPU " << CPUName << "(" << HasItin << ")\n");
+  DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "CPU " << CPUName << "(" << HasItin << ")\n");
 
   // Initialize scheduling itinerary for the specified CPU.
   InstrItins = getInstrItineraryForCPU(CPUName);

@@ -19,7 +19,7 @@ namespace llvm {
     const MCSection *SmallBSSSection;
   public:
 
-    void Initialize(MCContext &Ctx, const TargetMachine &TM);
+    void Initialize(MCContext &Ctx, const TargetMachine &TM) override;
 
     /// IsGlobalInSmallSection - Return true if this global address should be
     /// placed into small data/bss section.

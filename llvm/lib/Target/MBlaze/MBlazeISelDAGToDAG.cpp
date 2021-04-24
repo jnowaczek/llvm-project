@@ -27,7 +27,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/Type.h"
-#include "llvm/Support/CFG.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
@@ -262,12 +262,12 @@ SDNode* MBlazeDAGToDAGISel::Select(SDNode *Node) {
   // Select the default instruction
   SDNode *ResNode = SelectCode(Node);
 
-  DEBUG(errs() << "=> ");
+  DEBUG_WITH_TYPE(DEBUG_TYPE, errs() << "=> ");
   if (ResNode == NULL || ResNode == Node)
-    DEBUG(Node->dump(CurDAG));
+    DEBUG_WITH_TYPE(DEBUG_TYPE, Node->dump(CurDAG));
   else
-    DEBUG(ResNode->dump(CurDAG));
-  DEBUG(errs() << "\n");
+    DEBUG_WITH_TYPE(DEBUG_TYPE, ResNode->dump(CurDAG));
+  DEBUG_WITH_TYPE(DEBUG_TYPE, errs() << "\n");
   return ResNode;
 }
 

@@ -39,7 +39,7 @@ def MBlazeJmpLink : SDNode<"MBlazeISD::JmpLink",SDT_MBlazeJmpLink,
 def MBWrapper   : SDNode<"MBlazeISD::Wrap", SDTIntUnaryOp>;
 
 def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_MBCallSeqStart,
-                           [SDNPHasChain, SDNPOutGlue]>;
+                           [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
 
 def callseq_end   : SDNode<"ISD::CALLSEQ_END", SDT_MBCallSeqEnd,
                            [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
@@ -144,9 +144,9 @@ def xaddr : ComplexPattern<i32, 2, "SelectAddrRegReg", [], []>;
 
 // As stack alignment is always done with addiu, we need a 16-bit immediate
 let Defs = [R1], Uses = [R1] in {
-def ADJCALLSTACKDOWN : MBlazePseudo<(outs), (ins simm16:$amt),
+def ADJCALLSTACKDOWN : MBlazePseudo<(outs), (ins simm16:$amt, simm16:$amt2),
                                   "#ADJCALLSTACKDOWN $amt",
-                                  [(callseq_start timm:$amt)]>;
+                                  [(callseq_start timm:$amt, timm:$amt2)]>;
 def ADJCALLSTACKUP   : MBlazePseudo<(outs),
                                   (ins uimm16:$amt1, simm16:$amt2),
                                   "#ADJCALLSTACKUP $amt1",
@@ -442,7 +442,7 @@ let Predicates=[HasMul] in {
 //===----------------------------------------------------------------------===//
 
 let canFoldAsLoad = 1, isReMaterializable = 1 in {
-  let neverHasSideEffects = 1 in {
+  let hasSideEffects = 0 in {
     def LBU  :  LoadM<0x30, 0x000, "lbu    ">;
     def LBUR :  LoadM<0x30, 0x200, "lbur   ">;
 
@@ -593,7 +593,7 @@ let isReturn=1, isTerminator=1, hasDelaySlot=1, isBarrier=1,
 // MBlaze misc instructions
 //===----------------------------------------------------------------------===//
 
-let neverHasSideEffects = 1 in {
+let hasSideEffects = 0 in {
   def NOP :  MBlazeInst<0x20, FC, (outs), (ins), "nop    ", [], IIC_ALU>;
 }
 

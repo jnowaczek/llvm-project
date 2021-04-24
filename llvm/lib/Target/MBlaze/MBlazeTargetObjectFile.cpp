@@ -15,7 +15,6 @@
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/ELF.h"
 #include "llvm/Target/TargetMachine.h"
 using namespace llvm;
 
@@ -25,13 +24,12 @@ Initialize(MCContext &Ctx, const TargetMachine &TM) {
 
   SmallDataSection =
     getContext().getELFSection(".sdata", ELF::SHT_PROGBITS,
-                               ELF::SHF_WRITE |ELF::SHF_ALLOC,
-                               SectionKind::getDataRel());
+                               ELF::SHF_WRITE | ELF::SHF_ALLOC |
+                               ELF::SHF_HEX_GPREL);
 
   SmallBSSSection =
     getContext().getELFSection(".sbss", ELF::SHT_NOBITS,
-                               ELF::SHF_WRITE |ELF::SHF_ALLOC,
-                               SectionKind::getBSS());
+                               ELF::SHF_WRITE | ELF::SHF_ALLOC);
 
 }
 
@@ -47,7 +45,7 @@ IsGlobalInSmallSection(const GlobalValue *GV, const TargetMachine &TM) const {
   if (GV->isDeclaration() || GV->hasAvailableExternallyLinkage())
     return false;
 
-  return IsGlobalInSmallSection(GV, TM, getKindForGlobal(GV, TM));
+  return IsGlobalInSmallSection(GV, TM, getKindForGlobal(GV->getBaseObject(), TM));
 }
 
 /// IsGlobalInSmallSection - Return true if this global address should be
@@ -61,7 +59,7 @@ IsGlobalInSmallSection(const GlobalValue *GV, const TargetMachine &TM,
     return false;
 
   // We can only do this for datarel or BSS objects for now.
-  if (!Kind.isBSS() && !Kind.isDataRel())
+  if (!Kind.isBSS() && !Kind.isReadOnlyWithRel())
     return false;
 
   // If this is a internal constant string, there is a special
@@ -70,7 +68,8 @@ IsGlobalInSmallSection(const GlobalValue *GV, const TargetMachine &TM,
     return false;
 
   Type *Ty = GV->getType()->getElementType();
-  return IsInSmallSection(TM.getDataLayout()->getTypeAllocSize(Ty));
+  const DataLayout &DL = GV->getParent()->getDataLayout();
+  return IsInSmallSection(DL.getTypeAllocSize(const_cast<Type*>(Ty)));
 }
 
 const MCSection *MBlazeTargetObjectFile::
@@ -82,9 +81,9 @@ SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
   // Handle Small Section classification here.
   if (Kind.isBSS() && IsGlobalInSmallSection(GV, TM, Kind))
     return SmallBSSSection;
-  if (Kind.isDataNoRel() && IsGlobalInSmallSection(GV, TM, Kind))
+  if (!Kind.isReadOnlyWithRel() && IsGlobalInSmallSection(GV, TM, Kind))
     return SmallDataSection;
 
   // Otherwise, we work the same as ELF.
-  return TargetLoweringObjectFileELF::SelectSectionForGlobal(GV, Kind, Mang,TM);
+  return TargetLoweringObjectFileELF::SelectSectionForGlobal(GV->getBaseObject(), Kind, TM);
 }

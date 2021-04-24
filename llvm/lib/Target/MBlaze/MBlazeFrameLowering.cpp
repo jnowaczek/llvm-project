@@ -61,7 +61,7 @@ static void replaceFrameIndexes(MachineFunction &MF,
 
         for (MachineInstr::mop_iterator MII = MIB; MII != MIE; ++MII) {
           if (!MII->isFI() || MII->getIndex() != FRI->first) continue;
-          DEBUG(dbgs() << "FOUND FI#" << MII->getIndex() << "\n");
+          DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "FOUND FI#" << MII->getIndex() << "\n");
           MII->setIndex(NFI);
         }
       }
@@ -138,16 +138,16 @@ static void analyzeFrameIndexes(MachineFunction &MF) {
         if (SI->getOperand(0).isDef()) break;
 
         if (SI->getOperand(0).isKill()) {
-          DEBUG(dbgs() << "LWI for FI#" << I->getOperand(1).getIndex() 
+          DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "LWI for FI#" << I->getOperand(1).getIndex() 
                        << " removed\n");
           EraseInstr.push_back(I);
         }
 
         EraseInstr.push_back(SI);
-        DEBUG(dbgs() << "SWI for FI#" << FI << " removed\n");
+        DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "SWI for FI#" << FI << " removed\n");
 
         FrameRelocate.push_back(std::make_pair(FI,StackOffset));
-        DEBUG(dbgs() << "FI#" << FI << " relocated to " << StackOffset << "\n");
+        DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "FI#" << FI << " relocated to " << StackOffset << "\n");
 
         StackOffset -= 4;
         StackAdjust += 4;
@@ -193,7 +193,7 @@ static void analyzeFrameIndexes(MachineFunction &MF) {
 
         StackAdjust += 4;
         FrameRelocate.push_back(std::make_pair(FI,FILoc));
-        DEBUG(dbgs() << "FI#" << FI << " relocated to " << FILoc << "\n");
+        DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "FI#" << FI << " relocated to " << FILoc << "\n");
         break;
       }
     }
@@ -307,7 +307,7 @@ static void determineFrameLayout(MachineFunction &MF) {
 
   // Get the number of bytes to allocate from the FrameInfo
   unsigned FrameSize = MFI->getStackSize();
-  DEBUG(dbgs() << "Original Frame Size: " << FrameSize << "\n" );
+  DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "Original Frame Size: " << FrameSize << "\n" );
 
   // Get the alignments provided by the target, and the maximum alignment
   // (if any) of the fixed frame objects.
@@ -318,7 +318,7 @@ static void determineFrameLayout(MachineFunction &MF) {
   // Make sure the frame is aligned.
   FrameSize = (FrameSize + AlignMask) & ~AlignMask;
   MFI->setStackSize(FrameSize);
-  DEBUG(dbgs() << "Aligned Frame Size: " << FrameSize << "\n" );
+  DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "Aligned Frame Size: " << FrameSize << "\n" );
 }
 
 int MBlazeFrameLowering::getFrameIndexOffset(const MachineFunction &MF, int FI) 

@@ -10,7 +10,8 @@ tablegen(LLVM MBlazeGenAsmMatcher.inc -gen-asm-matcher)
 tablegen(LLVM MBlazeGenDAGISel.inc -gen-dag-isel)
 tablegen(LLVM MBlazeGenCallingConv.inc -gen-callingconv)
 tablegen(LLVM MBlazeGenSubtargetInfo.inc -gen-subtarget)
-tablegen(LLVM MBlazeGenIntrinsics.inc -gen-tgt-intrinsic)
+tablegen(LLVM MBlazeGenIntrinsicsEnums.inc -gen-intrinsic-enums)
+tablegen(LLVM MBlazeGenIntrinsics.inc -gen-intrinsic-impl)
 add_public_tablegen_target(MBlazeCommonTableGen)
 
 add_llvm_target(MBlazeCodeGen
@@ -48,7 +49,7 @@ add_llvm_target(MBlazeCodeGen
 
 add_dependencies(LLVMMBlazeCodeGen intrinsics_gen)
 
-add_subdirectory(AsmParser)
+# add_subdirectory(AsmParser)
 add_subdirectory(Disassembler)
 add_subdirectory(InstPrinter)
 add_subdirectory(TargetInfo)

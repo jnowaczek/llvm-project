@@ -14,7 +14,7 @@
 #include "MBlazeTargetMachine.h"
 #include "MBlaze.h"
 #include "llvm/CodeGen/Passes.h"
-#include "llvm/PassManager.h"
+#include "llvm/IR/PassManager.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Target/TargetOptions.h"

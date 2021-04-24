@@ -17,7 +17,7 @@
 #include "MBlaze.h"
 #include "MBlazeRegisterInfo.h"
 #include "llvm/Support/ErrorHandling.h"
-#include "llvm/Target/TargetInstrInfo.h"
+#include "llvm/CodeGen/TargetInstrInfo.h"
 
 #define GET_INSTRINFO_HEADER
 #include "MBlazeGenInstrInfo.inc"

@@ -28,7 +28,7 @@ namespace mblazeIntrinsic {
   enum ID {
     last_non_mblaze_intrinsic = Intrinsic::num_intrinsics-1,
 #define GET_INTRINSIC_ENUM_VALUES
-#include "MBlazeGenIntrinsics.inc"
+#include "MBlazeGenIntrinsicsEnums.inc"
 #undef GET_INTRINSIC_ENUM_VALUES
     , num_mblaze_intrinsics
   };

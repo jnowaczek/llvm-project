@@ -26,7 +26,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/Mangler.h"
+#include "llvm/IR/Mangler.h"
 using namespace llvm;
 
 MCSymbol *MBlazeMCInstLower::

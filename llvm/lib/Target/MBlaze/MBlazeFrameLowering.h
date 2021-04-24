@@ -15,7 +15,7 @@
 #define MBLAZE_FRAMEINFO_H
 
 #include "MBlaze.h"
-#include "llvm/Target/TargetFrameLowering.h"
+#include "llvm/CodeGen/TargetFrameLowering.h"
 
 namespace llvm {
 class MBlazeSubtarget;
@@ -26,20 +26,20 @@ protected:
 
 public:
   explicit MBlazeFrameLowering(const MBlazeSubtarget &sti)
-    : TargetFrameLowering(TargetFrameLowering::StackGrowsUp, 4, 0), STI(sti) {
+    : TargetFrameLowering(TargetFrameLowering::StackGrowsUp, Align(4), 0), STI(sti) {
   }
 
   /// targetHandlesStackFrameRounding - Returns true if the target is
   /// responsible for rounding up the stack frame (probably at emitPrologue
   /// time).
-  bool targetHandlesStackFrameRounding() const { return true; }
+  bool targetHandlesStackFrameRounding() const override { return true; }
 
   /// emitProlog/emitEpilog - These methods insert prolog and epilog code into
   /// the function.
   void emitPrologue(MachineFunction &MF) const;
-  void emitEpilogue(MachineFunction &MF, MachineBasicBlock &MBB) const;
+  void emitEpilogue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
 
-  void eliminateCallFramePseudoInstr(MachineFunction &MF,
+  MachineBasicBlock::iterator eliminateCallFramePseudoInstr(MachineFunction &MF,
                                      MachineBasicBlock &MBB,
                                      MachineBasicBlock::iterator I) const;
 

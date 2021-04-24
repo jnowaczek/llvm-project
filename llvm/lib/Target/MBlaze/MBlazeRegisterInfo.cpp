@@ -18,6 +18,7 @@
 #include "MBlaze.h"
 #include "MBlazeMachineFunction.h"
 #include "MBlazeSubtarget.h"
+#include "MBlazeFrameLowering.h"
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
@@ -31,8 +32,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetFrameLowering.h"
-#include "llvm/Target/TargetInstrInfo.h"
+#include "llvm/CodeGen/TargetFrameLowering.h"
+#include "llvm/CodeGen/TargetInstrInfo.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 
@@ -91,23 +92,23 @@ eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
                     unsigned FIOperandNum, RegScavenger *RS) const {
   MachineInstr &MI = *II;
   MachineFunction &MF = *MI.getParent()->getParent();
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo MFI = MF.getFrameInfo();
   unsigned OFIOperandNum = FIOperandNum == 2 ? 1 : 2;
 
-  DEBUG(dbgs() << "\nFunction : " << MF.getName() << "\n";
+  DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "\nFunction : " << MF.getName() << "\n";
         dbgs() << "<--------->\n" << MI);
 
   int FrameIndex = MI.getOperand(FIOperandNum).getIndex();
-  int stackSize  = MFI->getStackSize();
-  int spOffset   = MFI->getObjectOffset(FrameIndex);
+  int stackSize  = MFI.getStackSize();
+  int spOffset   = MFI.getObjectOffset(FrameIndex);
 
-  DEBUG(MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
+  DEBUG_WITH_TYPE(DEBUG_TYPE, MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
         dbgs() << "FrameIndex : " << FrameIndex << "\n"
                << "spOffset   : " << spOffset << "\n"
                << "stackSize  : " << stackSize << "\n"
-               << "isFixed    : " << MFI->isFixedObjectIndex(FrameIndex) << "\n"
+               << "isFixed    : " << MFI.isFixedObjectIndex(FrameIndex) << "\n"
                << "isLiveIn   : " << MBlazeFI->isLiveIn(FrameIndex) << "\n"
-               << "isSpill    : " << MFI->isSpillSlotObjectIndex(FrameIndex)
+               << "isSpill    : " << MFI.isSpillSlotObjectIndex(FrameIndex)
                << "\n" );
 
   // as explained on LowerFormalArguments, detect negative offsets
@@ -115,7 +116,7 @@ eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
   int Offset = (spOffset < 0) ? (stackSize - spOffset) : spOffset;
   Offset += MI.getOperand(OFIOperandNum).getImm();
 
-  DEBUG(dbgs() << "Offset     : " << Offset << "\n" << "<--------->\n");
+  DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "Offset     : " << Offset << "\n" << "<--------->\n");
 
   MI.getOperand(OFIOperandNum).ChangeToImmediate(Offset);
   MI.getOperand(FIOperandNum).ChangeToRegister(getFrameRegister(MF), false);
@@ -124,16 +125,14 @@ eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
 void MBlazeRegisterInfo::
 processFunctionBeforeFrameFinalized(MachineFunction &MF, RegScavenger *) const {
   // Set the stack offset where GP must be saved/loaded from.
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo MFI = MF.getFrameInfo();
   MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
   if (MBlazeFI->needGPSaveRestore())
-    MFI->setObjectOffset(MBlazeFI->getGPFI(), MBlazeFI->getGPStackOffset());
+    MFI.setObjectOffset(MBlazeFI->getGPFI(), MBlazeFI->getGPStackOffset());
 }
 
-unsigned MBlazeRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
-  const TargetFrameLowering *TFI = MF.getTarget().getFrameLowering();
-
-  return TFI->hasFP(MF) ? MBlaze::R19 : MBlaze::R1;
+llvm::Register MBlazeRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
+  return getFrameLowering(MF)->hasFP(MF) ? MBlaze::R19 : MBlaze::R1;
 }
 
 unsigned MBlazeRegisterInfo::getEHExceptionRegister() const {

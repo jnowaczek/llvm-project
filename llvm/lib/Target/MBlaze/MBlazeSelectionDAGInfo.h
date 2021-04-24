@@ -14,7 +14,7 @@
 #ifndef MBLAZESELECTIONDAGINFO_H
 #define MBLAZESELECTIONDAGINFO_H
 
-#include "llvm/Target/TargetSelectionDAGInfo.h"
+#include "llvm/CodeGen/SelectionDAGTargetInfo.h"
 
 namespace llvm {
 
