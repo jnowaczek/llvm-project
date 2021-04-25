@@ -36,14 +36,14 @@ public:
 
   /// emitProlog/emitEpilog - These methods insert prolog and epilog code into
   /// the function.
-  void emitPrologue(MachineFunction &MF) const;
+  void emitPrologue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
   void emitEpilogue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
 
   MachineBasicBlock::iterator eliminateCallFramePseudoInstr(MachineFunction &MF,
                                      MachineBasicBlock &MBB,
-                                     MachineBasicBlock::iterator I) const;
+                                     MachineBasicBlock::iterator I) const override;
 
-  bool hasFP(const MachineFunction &MF) const;
+  bool hasFP(const MachineFunction &MF) const override;
 
   int getFrameIndexOffset(const MachineFunction &MF, int FI) const;
 

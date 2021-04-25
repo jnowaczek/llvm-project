@@ -226,7 +226,7 @@ public:
 
   /// Insert nop instruction when hazard condition is found
   virtual void insertNoop(MachineBasicBlock &MBB,
-                          MachineBasicBlock::iterator MI) const;
+                          MachineBasicBlock::iterator MI) const override;
 
   /// getGlobalBaseReg - Return a virtual register initialized with the
   /// the global base register value. Output instructions required to

@@ -43,12 +43,12 @@ namespace {
     Filler(TargetMachine &tm)
       : MachineFunctionPass(ID), TM(tm) { }
 
-    virtual const char *getPassName() const {
-      return "MBlaze Delay Slot Filler";
+    virtual StringRef getPassName() const override {
+      return StringRef("MBlaze Delay Slot Filler");
     }
 
     bool runOnMachineBasicBlock(MachineBasicBlock &MBB);
-    bool runOnMachineFunction(MachineFunction &F) {
+    bool runOnMachineFunction(MachineFunction &F) override {
       bool Changed = false;
       for (MachineFunction::iterator FI = F.begin(), FE = F.end();
            FI != FE; ++FI)
@@ -237,7 +237,7 @@ bool Filler::runOnMachineBasicBlock(MachineBasicBlock &MBB) {
       Changed = true;
 
       if (D == MBB.end())
-        BuildMI(MBB, ++J, I->getDebugLoc(),TM.getInstrInfo()->get(MBlaze::NOP));
+        BuildMI(MBB, ++J, I->getDebugLoc(),TM.getMCInstrInfo()->get(MBlaze::NOP));
       else
         MBB.splice(++J, &MBB, D);
     }

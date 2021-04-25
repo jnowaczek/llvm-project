@@ -69,11 +69,11 @@ namespace llvm {
     virtual const MBlazeSelectionDAGInfo* getSelectionDAGInfo() const
     { return &TSInfo; }
 
-    const TargetIntrinsicInfo *getIntrinsicInfo() const
+    const TargetIntrinsicInfo *getIntrinsicInfo() const override
     { return &IntrinsicInfo; }
 
     // Pass Pipeline Configuration
-    virtual TargetPassConfig *createPassConfig(PassManagerBase &PM);
+    virtual TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
   };
 } // End llvm namespace
 

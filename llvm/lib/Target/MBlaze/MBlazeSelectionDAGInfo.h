@@ -20,7 +20,7 @@ namespace llvm {
 
 class MBlazeTargetMachine;
 
-class MBlazeSelectionDAGInfo : public TargetSelectionDAGInfo {
+class MBlazeSelectionDAGInfo : public SelectionDAGTargetInfo {
 public:
   explicit MBlazeSelectionDAGInfo(const MBlazeTargetMachine &TM);
   ~MBlazeSelectionDAGInfo();

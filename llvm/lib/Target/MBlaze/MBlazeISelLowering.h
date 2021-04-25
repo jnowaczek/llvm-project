@@ -95,11 +95,11 @@ namespace llvm {
     explicit MBlazeTargetLowering(MBlazeTargetMachine &TM);
 
     /// LowerOperation - Provide custom lowering hooks for some operations.
-    virtual SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const;
+    virtual SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
 
     /// getTargetNodeName - This method returns the name of a target specific
     //  DAG node.
-    virtual const char *getTargetNodeName(unsigned Opcode) const;
+    virtual const char *getTargetNodeName(unsigned Opcode) const override;
 
     /// getSetCCResultType - get the ISD::SETCC result ValueType
     EVT getSetCCResultType(LLVMContext &Context, EVT VT) const;
@@ -133,7 +133,7 @@ namespace llvm {
 
     virtual SDValue
       LowerCall(TargetLowering::CallLoweringInfo &CLI,
-                SmallVectorImpl<SDValue> &InVals) const;
+                SmallVectorImpl<SDValue> &InVals) const override;
 
     virtual SDValue
       LowerReturn(SDValue Chain,
@@ -161,13 +161,13 @@ namespace llvm {
     /// Examine constraint string and operand type and determine a weight value.
     /// The operand object must already have been set up with the operand type.
     ConstraintWeight getSingleConstraintMatchWeight(
-      AsmOperandInfo &info, const char *constraint) const;
+      AsmOperandInfo &info, const char *constraint) const override;
 
     std::pair<unsigned, const TargetRegisterClass*>
               getRegForInlineAsmConstraint(const std::string &Constraint,
                                            MVT VT) const;
 
-    virtual bool isOffsetFoldingLegal(const GlobalAddressSDNode *GA) const;
+    virtual bool isOffsetFoldingLegal(const GlobalAddressSDNode *GA) const override;
 
     /// isFPImmLegal - Returns true if the target can instruction select the
     /// specified FP immediate natively. If false, the legalizer will

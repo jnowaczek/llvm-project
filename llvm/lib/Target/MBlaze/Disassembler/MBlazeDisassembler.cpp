@@ -14,11 +14,11 @@
 
 #include "MBlazeDisassembler.h"
 #include "MBlaze.h"
-#include "llvm/MC/MCDisassembler.h"
+#include "llvm/MC/MCDisassembler/MCDisassembler.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/MemoryObject.h"
+#include "./MemoryObject.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -708,7 +708,7 @@ MCDisassembler::DecodeStatus MBlazeDisassembler::getInstruction(MCInst &instr,
 
 static MCDisassembler *createMBlazeDisassembler(const Target &T,
                                                 const MCSubtargetInfo &STI) {
-  return new MBlazeDisassembler(STI);
+  return new MBlazeDisassembler(STI, T.createMCInstrInfo());
 }
 
 extern "C" void LLVMInitializeMBlazeDisassembler() {

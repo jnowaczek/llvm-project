@@ -40,7 +40,7 @@ static cl::opt<bool> MBDisableStackAdjust(
 
 static void replaceFrameIndexes(MachineFunction &MF,
                                 SmallVectorImpl<std::pair<int,int64_t> > &FR) {
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo *MFI = &MF.getFrameInfo();
   MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
   const SmallVectorImpl<std::pair<int,int64_t> >::iterator FRB = FR.begin();
   const SmallVectorImpl<std::pair<int,int64_t> >::iterator FRE = FR.end();
@@ -85,7 +85,7 @@ static void replaceFrameIndexes(MachineFunction &MF,
 static void analyzeFrameIndexes(MachineFunction &MF) {
   if (MBDisableStackAdjust) return;
 
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo *MFI = &MF.getFrameInfo();
   MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
   const MachineRegisterInfo &MRI = MF.getRegInfo();
 
@@ -140,10 +140,10 @@ static void analyzeFrameIndexes(MachineFunction &MF) {
         if (SI->getOperand(0).isKill()) {
           DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "LWI for FI#" << I->getOperand(1).getIndex() 
                        << " removed\n");
-          EraseInstr.push_back(I);
+          EraseInstr.push_back(&*I);
         }
 
-        EraseInstr.push_back(SI);
+        EraseInstr.push_back(&*SI);
         DEBUG_WITH_TYPE(DEBUG_TYPE, dbgs() << "SWI for FI#" << FI << " removed\n");
 
         FrameRelocate.push_back(std::make_pair(FI,StackOffset));
@@ -210,7 +210,7 @@ static void analyzeFrameIndexes(MachineFunction &MF) {
 }
 
 static void interruptFrameLayout(MachineFunction &MF) {
-  const Function *F = MF.getFunction();
+  const Function *F = &MF.getFunction();
   CallingConv::ID CallConv = F->getCallingConv();
 
   // If this function is not using either the interrupt_handler
@@ -220,10 +220,10 @@ static void interruptFrameLayout(MachineFunction &MF) {
       CallConv != CallingConv::MBLAZE_SVOL)
       return;
 
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo *MFI = &MF.getFrameInfo();
   const MachineRegisterInfo &MRI = MF.getRegInfo();
   const MBlazeInstrInfo &TII =
-    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getInstrInfo());
+    *static_cast<const MBlazeInstrInfo*>(MF.getSubtarget().getInstrInfo());
 
   // Determine if the calling convention is the interrupt_handler
   // calling convention. Some pieces of the prologue and epilogue
@@ -235,7 +235,7 @@ static void interruptFrameLayout(MachineFunction &MF) {
   MachineBasicBlock &MEXT   = MF.back();
 
   MachineBasicBlock::iterator MENTI = MENT.begin();
-  MachineBasicBlock::iterator MEXTI = prior(MEXT.end());
+  MachineBasicBlock::iterator MEXTI = std::prev(MEXT.end());
 
   DebugLoc ENTDL = MENTI != MENT.end() ? MENTI->getDebugLoc() : DebugLoc();
   DebugLoc EXTDL = MEXTI != MEXT.end() ? MEXTI->getDebugLoc() : DebugLoc();
@@ -249,7 +249,7 @@ static void interruptFrameLayout(MachineFunction &MF) {
   for (unsigned r = MBlaze::R3; r <= MBlaze::R12; ++r) {
     if (!MRI.isPhysRegUsed(r) && !(isIntr && r == MBlaze::R11)) continue;
     
-    int FI = MFI->CreateStackObject(4,4,false,false);
+    int FI = MFI->CreateStackObject(4,Align(4),false);
     VFI.push_back(FI);
 
     BuildMI(MENT, MENTI, ENTDL, TII.get(MBlaze::SWI), r)
@@ -257,8 +257,8 @@ static void interruptFrameLayout(MachineFunction &MF) {
   }
     
   // Build the prologue SWI for R17, R18
-  int R17FI = MFI->CreateStackObject(4,4,false,false);
-  int R18FI = MFI->CreateStackObject(4,4,false,false);
+  int R17FI = MFI->CreateStackObject(4,Align(4),false);
+  int R18FI = MFI->CreateStackObject(4,Align(4),false);
 
   BuildMI(MENT, MENTI, ENTDL, TII.get(MBlaze::SWI), MBlaze::R17)
     .addFrameIndex(R17FI).addImm(0);
@@ -268,7 +268,7 @@ static void interruptFrameLayout(MachineFunction &MF) {
 
   // Buid the prologue SWI and the epilogue LWI for RMSR if needed
   if (isIntr) {
-    int MSRFI = MFI->CreateStackObject(4,4,false,false);
+    int MSRFI = MFI->CreateStackObject(4,Align(4),false);
     BuildMI(MENT, MENTI, ENTDL, TII.get(MBlaze::MFS), MBlaze::R11)
       .addReg(MBlaze::RMSR);
     BuildMI(MENT, MENTI, ENTDL, TII.get(MBlaze::SWI), MBlaze::R11)
@@ -296,7 +296,7 @@ static void interruptFrameLayout(MachineFunction &MF) {
 }
 
 static void determineFrameLayout(MachineFunction &MF) {
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo *MFI = &MF.getFrameInfo();
   MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
 
   // Replace the dummy '0' SPOffset by the negative offsets, as explained on
@@ -312,7 +312,7 @@ static void determineFrameLayout(MachineFunction &MF) {
   // Get the alignments provided by the target, and the maximum alignment
   // (if any) of the fixed frame objects.
   // unsigned MaxAlign = MFI->getMaxAlignment();
-  unsigned TargetAlign = MF.getTarget().getFrameLowering()->getStackAlignment();
+  unsigned TargetAlign = MF.getSubtarget().getFrameLowering()->getStackAlignment();
   unsigned AlignMask = TargetAlign - 1;
 
   // Make sure the frame is aligned.
@@ -326,28 +326,27 @@ int MBlazeFrameLowering::getFrameIndexOffset(const MachineFunction &MF, int FI)
   const MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
   if (MBlazeFI->hasReplacement(FI))
     FI = MBlazeFI->getReplacement(FI);
-  return TargetFrameLowering::getFrameIndexOffset(MF,FI);
+  return MBlazeFrameLowering::getFrameIndexOffset(MF,FI);
 }
 
 // hasFP - Return true if the specified function should have a dedicated frame
 // pointer register.  This is true if the function has variable sized allocas or
 // if frame pointer elimination is disabled.
 bool MBlazeFrameLowering::hasFP(const MachineFunction &MF) const {
-  const MachineFrameInfo *MFI = MF.getFrameInfo();
+  const MachineFrameInfo *MFI = &MF.getFrameInfo();
   return MF.getTarget().Options.DisableFramePointerElim(MF) ||
          MFI->hasVarSizedObjects();
 }
 
-void MBlazeFrameLowering::emitPrologue(MachineFunction &MF) const {
-  MachineBasicBlock &MBB   = MF.front();
-  MachineFrameInfo *MFI    = MF.getFrameInfo();
+void MBlazeFrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &MBB) const {
+  MachineFrameInfo *MFI    = &MF.getFrameInfo();
   const MBlazeInstrInfo &TII =
-    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getInstrInfo());
+    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getMCInstrInfo());
   MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
   MachineBasicBlock::iterator MBBI = MBB.begin();
   DebugLoc DL = MBBI != MBB.end() ? MBBI->getDebugLoc() : DebugLoc();
 
-  CallingConv::ID CallConv = MF.getFunction()->getCallingConv();
+  CallingConv::ID CallConv = MF.getFunction().getCallingConv();
   bool requiresRA = CallConv == CallingConv::MBLAZE_INTR;
 
   // Determine the correct frame layout
@@ -386,14 +385,14 @@ void MBlazeFrameLowering::emitPrologue(MachineFunction &MF) const {
 void MBlazeFrameLowering::emitEpilogue(MachineFunction &MF,
                                    MachineBasicBlock &MBB) const {
   MachineBasicBlock::iterator MBBI = MBB.getLastNonDebugInstr();
-  MachineFrameInfo *MFI            = MF.getFrameInfo();
+  MachineFrameInfo *MFI            = &MF.getFrameInfo();
   MBlazeFunctionInfo *MBlazeFI     = MF.getInfo<MBlazeFunctionInfo>();
   const MBlazeInstrInfo &TII =
-    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getInstrInfo());
+    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getMCInstrInfo());
 
   DebugLoc dl = MBBI->getDebugLoc();
 
-  CallingConv::ID CallConv = MF.getFunction()->getCallingConv();
+  CallingConv::ID CallConv = MF.getFunction().getCallingConv();
   bool requiresRA = CallConv == CallingConv::MBLAZE_INTR;
 
   // Get the FI's where RA and FP are saved.
@@ -427,17 +426,16 @@ void MBlazeFrameLowering::emitEpilogue(MachineFunction &MF,
 }
 
 // Eliminate ADJCALLSTACKDOWN/ADJCALLSTACKUP pseudo instructions
-void MBlazeFrameLowering::
+MachineBasicBlock::iterator MBlazeFrameLowering::
 eliminateCallFramePseudoInstr(MachineFunction &MF, MachineBasicBlock &MBB,
                               MachineBasicBlock::iterator I) const {
   const MBlazeInstrInfo &TII =
-    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getInstrInfo());
+    *static_cast<const MBlazeInstrInfo*>(MF.getTarget().getMCInstrInfo());
   if (!hasReservedCallFrame(MF)) {
     // If we have a frame pointer, turn the adjcallstackup instruction into a
     // 'addi r1, r1, -<amt>' and the adjcallstackdown instruction into
     // 'addi r1, r1, <amt>'
-    MachineInstr *Old = I;
-    int Amount = Old->getOperand(0).getImm() + 4;
+    int Amount = I->getOperand(0).getImm() + 4;
     if (Amount != 0) {
       // We need to keep the stack aligned properly.  To do this, we round the
       // amount of space needed for the outgoing arguments up to the next
@@ -446,12 +444,12 @@ eliminateCallFramePseudoInstr(MachineFunction &MF, MachineBasicBlock &MBB,
       Amount = (Amount+Align-1)/Align*Align;
 
       MachineInstr *New;
-      if (Old->getOpcode() == MBlaze::ADJCALLSTACKDOWN) {
-        New = BuildMI(MF,Old->getDebugLoc(), TII.get(MBlaze::ADDIK),MBlaze::R1)
+      if (I->getOpcode() == MBlaze::ADJCALLSTACKDOWN) {
+        New = BuildMI(MF,I->getDebugLoc(), TII.get(MBlaze::ADDIK),MBlaze::R1)
                 .addReg(MBlaze::R1).addImm(-Amount);
       } else {
-        assert(Old->getOpcode() == MBlaze::ADJCALLSTACKUP);
-        New = BuildMI(MF,Old->getDebugLoc(), TII.get(MBlaze::ADDIK),MBlaze::R1)
+        assert(I->getOpcode() == MBlaze::ADJCALLSTACKUP);
+        New = BuildMI(MF,I->getDebugLoc(), TII.get(MBlaze::ADDIK),MBlaze::R1)
                 .addReg(MBlaze::R1).addImm(Amount);
       }
 
@@ -461,16 +459,16 @@ eliminateCallFramePseudoInstr(MachineFunction &MF, MachineBasicBlock &MBB,
   }
 
   // Simply discard ADJCALLSTACKDOWN, ADJCALLSTACKUP instructions.
-  MBB.erase(I);
+  return MBB.erase(I);
 }
 
 
 void MBlazeFrameLowering::
 processFunctionBeforeCalleeSavedScan(MachineFunction &MF,
                                      RegScavenger *RS) const {
-  MachineFrameInfo *MFI = MF.getFrameInfo();
+  MachineFrameInfo *MFI = &MF.getFrameInfo();
   MBlazeFunctionInfo *MBlazeFI = MF.getInfo<MBlazeFunctionInfo>();
-  CallingConv::ID CallConv = MF.getFunction()->getCallingConv();
+  CallingConv::ID CallConv = MF.getFunction().getCallingConv();
   bool requiresRA = CallConv == CallingConv::MBLAZE_INTR;
 
   if (MFI->adjustsStack() || requiresRA) {

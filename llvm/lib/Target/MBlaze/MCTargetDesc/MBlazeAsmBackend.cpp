@@ -13,13 +13,12 @@
 #include "llvm/MC/MCAsmLayout.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCELFObjectWriter.h"
-#include "llvm/MC/MCELFSymbolFlags.h"
+#include "llvm/MC/MCSymbolELF.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/MC/MCSectionMachO.h"
 #include "llvm/MC/MCValue.h"
-#include "llvm/Support/ELF.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/raw_ostream.h"
@@ -43,23 +42,22 @@ namespace {
 class MBlazeAsmBackend : public MCAsmBackend {
 public:
   MBlazeAsmBackend(const Target &T)
-    : MCAsmBackend() {
-  }
+      : MCAsmBackend(support::little) {}
 
   unsigned getNumFixupKinds() const {
     return 2;
   }
 
-  bool mayNeedRelaxation(const MCInst &Inst) const;
+  bool mayNeedRelaxation(const MCInst &Inst, const MCSubtargetInfo &STI) const override;
 
   bool fixupNeedsRelaxation(const MCFixup &Fixup,
                             uint64_t Value,
                             const MCRelaxableFragment *DF,
-                            const MCAsmLayout &Layout) const;
+                            const MCAsmLayout &Layout) const override;
 
-  void relaxInstruction(const MCInst &Inst, MCInst &Res) const;
+  void relaxInstruction(MCInst &Inst, const MCSubtargetInfo &STI) const override;
 
-  bool writeNopData(uint64_t Count, MCObjectWriter *OW) const;
+  bool writeNopData(raw_ostream &OS, uint64_t Count) const override;
 
   unsigned getPointerSize() const {
     return 4;
@@ -75,7 +73,7 @@ static unsigned getRelaxedOpcode(unsigned Op) {
     }
 }
 
-bool MBlazeAsmBackend::mayNeedRelaxation(const MCInst &Inst) const {
+bool MBlazeAsmBackend::mayNeedRelaxation(const MCInst &Inst, const MCSubtargetInfo &STI) const {
   if (getRelaxedOpcode(Inst.getOpcode()) == Inst.getOpcode())
     return false;
 
@@ -98,17 +96,16 @@ bool MBlazeAsmBackend::fixupNeedsRelaxation(const MCFixup &Fixup,
   return int64_t(Value) != int64_t(int8_t(Value));
 }
 
-void MBlazeAsmBackend::relaxInstruction(const MCInst &Inst, MCInst &Res) const {
-  Res = Inst;
-  Res.setOpcode(getRelaxedOpcode(Inst.getOpcode()));
+void MBlazeAsmBackend::relaxInstruction(MCInst &Inst, const MCSubtargetInfo &STI) const {
+  Inst.setOpcode(getRelaxedOpcode(Inst.getOpcode()));
 }
 
-bool MBlazeAsmBackend::writeNopData(uint64_t Count, MCObjectWriter *OW) const {
+bool MBlazeAsmBackend::writeNopData(raw_ostream &OS, uint64_t Count) const {
   if ((Count % 4) != 0)
     return false;
 
   for (uint64_t i = 0; i < Count; i += 4)
-      OW->Write32(0x00000000);
+      OS.write_hex(0x00000000);
 
   return true;
 }
@@ -121,19 +118,23 @@ public:
   ELFMBlazeAsmBackend(const Target &T, uint8_t _OSABI)
     : MBlazeAsmBackend(T), OSABI(_OSABI) { }
 
-  void applyFixup(const MCFixup &Fixup, char *Data, unsigned DataSize,
-                  uint64_t Value) const;
+  void applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
+                          const MCValue &Target, MutableArrayRef<char> Data,
+                          uint64_t Value, bool IsResolved,
+                          const MCSubtargetInfo *STI) const;
 
   MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
     return createMBlazeELFObjectWriter(OS, OSABI);
   }
 };
 
-void ELFMBlazeAsmBackend::applyFixup(const MCFixup &Fixup, char *Data,
-                                     unsigned DataSize, uint64_t Value) const {
+void ELFMBlazeAsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
+                          const MCValue &Target, MutableArrayRef<char> Data,
+                          uint64_t Value, bool IsResolved,
+                          const MCSubtargetInfo *STI) const {
   unsigned Size = getFixupKindSize(Fixup.getKind());
 
-  assert(Fixup.getOffset() + Size <= DataSize &&
+  assert(Fixup.getOffset() + Size <= Value &&
          "Invalid fixup offset!");
 
   char *data = Data + Fixup.getOffset();

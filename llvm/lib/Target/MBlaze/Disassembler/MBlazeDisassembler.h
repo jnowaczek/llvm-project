@@ -15,7 +15,7 @@
 #ifndef MBLAZEDISASSEMBLER_H
 #define MBLAZEDISASSEMBLER_H
 
-#include "llvm/MC/MCDisassembler.h"
+#include "llvm/MC/MCDisassembler/MCDisassembler.h"
 
 namespace llvm {
   
@@ -28,8 +28,8 @@ class MBlazeDisassembler : public MCDisassembler {
 public:
   /// Constructor     - Initializes the disassembler.
   ///
-  MBlazeDisassembler(const MCSubtargetInfo &STI) :
-    MCDisassembler(STI) {
+  MBlazeDisassembler(const MCSubtargetInfo &STI, MCContext &Ctx) :
+    MCDisassembler(STI, Ctx) {
   }
 
   ~MBlazeDisassembler() {
@@ -38,7 +38,7 @@ public:
   /// getInstruction - See MCDisassembler.
   MCDisassembler::DecodeStatus getInstruction(MCInst &instr,
                       uint64_t &size,
-                      const MemoryObject &region,
+                      ArrayRef<uint8_t> Bytes,
                       uint64_t address,
                       raw_ostream &vStream,
                       raw_ostream &cStream) const;

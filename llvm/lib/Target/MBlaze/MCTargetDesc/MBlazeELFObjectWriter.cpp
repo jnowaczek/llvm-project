@@ -70,7 +70,7 @@ unsigned MBlazeELFObjectWriter::GetRelocType(const MCValue &Target,
 
 
 
-MCObjectWriter *llvm::createMBlazeELFObjectWriter(raw_ostream &OS,
+std::unique_ptr<MCObjectTargetWriter> llvm::createMBlazeELFObjectWriter(raw_ostream &OS,
                                                   uint8_t OSABI) {
   MCELFObjectTargetWriter *MOTW = new MBlazeELFObjectWriter(OSABI);
   return createELFObjectWriter(MOTW, OS,  /*IsLittleEndian=*/ false);

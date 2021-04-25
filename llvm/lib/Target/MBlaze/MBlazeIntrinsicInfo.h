@@ -20,12 +20,12 @@ namespace llvm {
   class MBlazeIntrinsicInfo : public TargetIntrinsicInfo {
   public:
     std::string getName(unsigned IntrID, Type **Tys = 0,
-                        unsigned numTys = 0) const;
-    unsigned lookupName(const char *Name, unsigned Len) const;
+                        unsigned numTys = 0) const override;
+    unsigned lookupName(const char *Name, unsigned Len) const override;
     unsigned lookupGCCName(const char *Name) const;
-    bool isOverloaded(unsigned IID) const;
+    bool isOverloaded(unsigned IID) const override;
     Function *getDeclaration(Module *M, unsigned ID, Type **Tys = 0,
-                             unsigned numTys = 0) const;
+                             unsigned numTys = 0) const override;
   };
 
 }

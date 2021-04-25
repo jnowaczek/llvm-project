@@ -317,6 +317,7 @@ enum {
   EM_BPF = 247,           // Linux kernel bpf virtual machine
   EM_VE = 251,            // NEC SX-Aurora VE
   EM_CSKY = 252,          // C-SKY 32-bit processor
+  EM_MBLAZE = 47787,      // Xilinx MicroBlaze
 };
 
 // Object file classes.
@@ -388,6 +389,11 @@ enum {
 // ELF Relocation types for PPC32
 enum {
 #include "ELFRelocs/PowerPC.def"
+};
+
+// ELF Relocation types for MBlaze
+enum {
+#include "ELFRelocs/MicroBlaze.def"
 };
 
 // Specific e_flags for PPC64
