@@ -19,7 +19,6 @@
 namespace llvm {
 class MCAsmBackend;
 class MCContext;
-class MCCodeEmitter;
 class MCInstrInfo;
 class MCObjectWriter;
 class MCRegisterInfo;
@@ -30,13 +29,10 @@ class raw_ostream;
 
 extern Target TheMBlazeTarget;
 
-MCCodeEmitter *createMBlazeMCCodeEmitter(const MCInstrInfo &MCII,
-                                         const MCRegisterInfo &MRI,
-                                         const MCSubtargetInfo &STI,
-                                         MCContext &Ctx);
-
-MCAsmBackend *createMBlazeAsmBackend(const Target &T, StringRef TT,
-                                     StringRef CPU);
+MCAsmBackend *createMBlazeAsmBackend(const Target &T,
+                                     const MCSubtargetInfo &STI,
+                                     const MCRegisterInfo &MRI,
+                                     const MCTargetOptions &Options);
 
 MCObjectWriter *createMBlazeELFObjectWriter(raw_ostream &OS, uint8_t OSABI);
 } // End llvm namespace

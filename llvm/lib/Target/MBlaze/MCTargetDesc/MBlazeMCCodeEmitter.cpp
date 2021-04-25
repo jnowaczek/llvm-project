@@ -29,13 +29,12 @@ STATISTIC(MCNumEmitted, "Number of MC instructions emitted");
 
 namespace {
 class MBlazeMCCodeEmitter : public MCCodeEmitter {
-  MBlazeMCCodeEmitter(const MBlazeMCCodeEmitter &) LLVM_DELETED_FUNCTION;
-  void operator=(const MBlazeMCCodeEmitter &) LLVM_DELETED_FUNCTION;
+  MBlazeMCCodeEmitter(const MBlazeMCCodeEmitter &) = delete;
+  void operator=(const MBlazeMCCodeEmitter &) = delete;
   const MCInstrInfo &MCII;
 
 public:
-  MBlazeMCCodeEmitter(const MCInstrInfo &mcii, const MCSubtargetInfo &sti,
-                      MCContext &ctx)
+  MBlazeMCCodeEmitter(const MCInstrInfo &mcii)
     : MCII(mcii) {
   }
 
@@ -90,19 +89,12 @@ public:
                      unsigned &CurByte, raw_ostream &OS,
                      SmallVectorImpl<MCFixup> &Fixups) const;
 
-  void EncodeInstruction(const MCInst &MI, raw_ostream &OS,
-                         SmallVectorImpl<MCFixup> &Fixups) const;
+  void encodeInstruction(const MCInst &Inst, raw_ostream &OS,
+                                 SmallVectorImpl<MCFixup> &Fixups,
+                                 const MCSubtargetInfo &STI) const;
 };
 
 } // end anonymous namespace
-
-
-MCCodeEmitter *llvm::createMBlazeMCCodeEmitter(const MCInstrInfo &MCII,
-                                               const MCRegisterInfo &MRI,
-                                               const MCSubtargetInfo &STI,
-                                               MCContext &Ctx) {
-  return new MBlazeMCCodeEmitter(MCII, STI, Ctx);
-}
 
 /// getMachineOpValue - Return binary encoding of operand. If the machine
 /// operand requires relocation, record the relocation and return zero.
@@ -160,13 +152,13 @@ EmitImmediate(const MCInst &MI, unsigned opNo, bool pcrel, unsigned &CurByte,
     switch (MI.getOpcode()) {
     default:
       FixupKind = pcrel ? FK_PCRel_2 : FK_Data_2;
-      Fixups.push_back(MCFixup::Create(0,oper.getExpr(),FixupKind));
+      Fixups.push_back(MCFixup::create(0,oper.getExpr(),FixupKind));
       break;
     case MBlaze::ORI32:
     case MBlaze::ADDIK32:
     case MBlaze::BRLID32:
       FixupKind = pcrel ? FK_PCRel_4 : FK_Data_4;
-      Fixups.push_back(MCFixup::Create(0,oper.getExpr(),FixupKind));
+      Fixups.push_back(MCFixup::create(0,oper.getExpr(),FixupKind));
       break;
     }
   }
@@ -175,8 +167,9 @@ EmitImmediate(const MCInst &MI, unsigned opNo, bool pcrel, unsigned &CurByte,
 
 
 void MBlazeMCCodeEmitter::
-EncodeInstruction(const MCInst &MI, raw_ostream &OS,
-                  SmallVectorImpl<MCFixup> &Fixups) const {
+encodeInstruction(const MCInst &MI, raw_ostream &OS,
+                  SmallVectorImpl<MCFixup> &Fixups,
+                  const MCSubtargetInfo &STI) const {
   unsigned Opcode = MI.getOpcode();
   const MCInstrDesc &Desc = MCII.get(Opcode);
   uint64_t TSFlags = Desc.TSFlags;

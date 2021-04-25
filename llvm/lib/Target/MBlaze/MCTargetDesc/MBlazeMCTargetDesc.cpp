@@ -14,7 +14,8 @@
 #include "MBlazeMCTargetDesc.h"
 #include "InstPrinter/MBlazeInstPrinter.h"
 #include "MBlazeMCAsmInfo.h"
-#include "llvm/MC/MCCodeGenInfo.h"
+#include "MBlazeMCCodeEmitter.cpp"
+#include "llvm/MC/MCCodeEmitter.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/MC/MCStreamer.h"
@@ -40,60 +41,45 @@ static MCInstrInfo *createMBlazeMCInstrInfo() {
   return X;
 }
 
-static MCRegisterInfo *createMBlazeMCRegisterInfo(StringRef TT) {
+static MCRegisterInfo *createMBlazeMCRegisterInfo(const Triple &TT) {
   MCRegisterInfo *X = new MCRegisterInfo();
   InitMBlazeMCRegisterInfo(X, MBlaze::R15);
   return X;
 }
 
-static MCSubtargetInfo *createMBlazeMCSubtargetInfo(StringRef TT, StringRef CPU,
+static MCSubtargetInfo *createMBlazeMCSubtargetInfo(const Triple &TT, 
+                                                    StringRef CPU,
                                                     StringRef FS) {
-  MCSubtargetInfo *X = new MCSubtargetInfo();
-  InitMBlazeMCSubtargetInfo(X, TT, CPU, FS);
-  return X;
+  return createMBlazeMCSubtargetInfoImpl(TT, CPU, CPU, FS);
 }
 
-static MCAsmInfo *createMCAsmInfo(const MCRegisterInfo &MRI, StringRef TT) {
+static MCAsmInfo *createMBlazeMCAsmInfo(const MCRegisterInfo &MRI,
+                                        const Triple &TT, 
+                                        const MCTargetOptions &Options) {
   return new MBlazeMCAsmInfo();
 }
 
-static MCCodeGenInfo *createMBlazeMCCodeGenInfo(StringRef TT, Reloc::Model RM,
-                                                CodeModel::Model CM,
-                                                CodeGenOpt::Level OL) {
-  MCCodeGenInfo *X = new MCCodeGenInfo();
-  if (RM == Reloc::Default)
-    RM = Reloc::Static;
-  if (CM == CodeModel::Default)
-    CM = CodeModel::Small;
-  X->InitMCCodeGenInfo(RM, CM, OL);
-  return X;
+static MCCodeEmitter *createMBlazeMCCodeEmitter(const MCInstrInfo &II,
+                                                const MCRegisterInfo &MRI,
+                                                MCContext &Ctx) {
+  return new MBlazeMCCodeEmitter(II);
 }
 
-static MCStreamer *createMCStreamer(const Target &T, StringRef TT,
-                                    MCContext &Ctx, MCAsmBackend &MAB,
-                                    raw_ostream &_OS,
-                                    MCCodeEmitter *_Emitter,
-                                    bool RelaxAll,
-                                    bool NoExecStack) {
-  Triple TheTriple(TT);
-
-  if (TheTriple.isOSDarwin()) {
-    llvm_unreachable("MBlaze does not support Darwin MACH-O format");
-  }
-
-  if (TheTriple.isOSWindows()) {
-    llvm_unreachable("MBlaze does not support Windows COFF format");
-  }
-
-  return createELFStreamer(Ctx, MAB, _OS, _Emitter, RelaxAll, NoExecStack);
+static MCStreamer
+*createMBlazeELFStreamer(const Triple &T, MCContext &Ctx,
+                         std::unique_ptr<MCAsmBackend> &&TAB,
+                         std::unique_ptr<MCObjectWriter> &&OW,
+                         std::unique_ptr<MCCodeEmitter> &&Emitter,
+                         bool RelaxAll) {
+  return createELFStreamer(Ctx, std::move(TAB), std::move(OW), 
+                          std::move(Emitter), RelaxAll);
 }
 
-static MCInstPrinter *createMBlazeMCInstPrinter(const Target &T,
+static MCInstPrinter *createMBlazeMCInstPrinter(const Triple &T,
                                                 unsigned SyntaxVariant,
                                                 const MCAsmInfo &MAI,
                                                 const MCInstrInfo &MII,
-                                                const MCRegisterInfo &MRI,
-                                                const MCSubtargetInfo &STI) {
+                                                const MCRegisterInfo &MRI) {
   if (SyntaxVariant == 0)
     return new MBlazeInstPrinter(MAI, MII, MRI);
   return 0;
@@ -102,14 +88,15 @@ static MCInstPrinter *createMBlazeMCInstPrinter(const Target &T,
 // Force static initialization.
 extern "C" void LLVMInitializeMBlazeTargetMC() {
   // Register the MC asm info.
-  RegisterMCAsmInfoFn X(TheMBlazeTarget, createMCAsmInfo);
+  TargetRegistry::RegisterMCAsmInfo(TheMBlazeTarget, createMBlazeMCAsmInfo);
 
   // Register the MC codegen info.
-  TargetRegistry::RegisterMCCodeGenInfo(TheMBlazeTarget,
-                                        createMBlazeMCCodeGenInfo);
+  TargetRegistry::RegisterMCCodeEmitter(TheMBlazeTarget,
+                                        createMBlazeMCCodeEmitter);
 
   // Register the MC instruction info.
-  TargetRegistry::RegisterMCInstrInfo(TheMBlazeTarget, createMBlazeMCInstrInfo);
+  TargetRegistry::RegisterMCInstrInfo(TheMBlazeTarget, 
+                                      createMBlazeMCInstrInfo);
 
   // Register the MC register info.
   TargetRegistry::RegisterMCRegInfo(TheMBlazeTarget,
@@ -119,19 +106,15 @@ extern "C" void LLVMInitializeMBlazeTargetMC() {
   TargetRegistry::RegisterMCSubtargetInfo(TheMBlazeTarget,
                                           createMBlazeMCSubtargetInfo);
 
-  // Register the MC code emitter
-  TargetRegistry::RegisterMCCodeEmitter(TheMBlazeTarget,
-                                        llvm::createMBlazeMCCodeEmitter);
-
   // Register the asm backend
   TargetRegistry::RegisterMCAsmBackend(TheMBlazeTarget,
                                        createMBlazeAsmBackend);
 
-  // Register the object streamer
-  TargetRegistry::RegisterMCObjectStreamer(TheMBlazeTarget,
-                                           createMCStreamer);
-
   // Register the MCInstPrinter.
   TargetRegistry::RegisterMCInstPrinter(TheMBlazeTarget,
                                         createMBlazeMCInstPrinter);
+  
+  // Register the ELF streamer.
+  TargetRegistry::RegisterELFStreamer(TheMBlazeTarget, 
+                                      createMBlazeELFStreamer);
 }

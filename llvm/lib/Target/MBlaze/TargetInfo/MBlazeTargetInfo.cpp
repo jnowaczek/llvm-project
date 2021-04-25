@@ -15,5 +15,5 @@ using namespace llvm;
 Target llvm::TheMBlazeTarget;
 
 extern "C" void LLVMInitializeMBlazeTargetInfo() {
-  RegisterTarget<Triple::mblaze> X(TheMBlazeTarget, "mblaze", "MBlaze");
+  RegisterTarget<Triple::mblaze, false> X(TheMBlazeTarget, "mblaze", "MBlaze", "mblaze");
 }

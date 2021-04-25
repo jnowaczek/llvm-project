@@ -36,12 +36,10 @@ namespace llvm {
     MBlazeTargetLowering   TLInfo;
     MBlazeSelectionDAGInfo TSInfo;
     MBlazeIntrinsicInfo    IntrinsicInfo;
-    InstrItineraryData     InstrItins;
 
   public:
-    MBlazeTargetMachine(const Target &T, StringRef TT,
-                        StringRef CPU, StringRef FS,
-                        const TargetOptions &Options,
+    MBlazeTargetMachine(const Target &T, Triple TT,
+                        StringRef CPU, StringRef FS, const TargetOptions &Options,
                         Reloc::Model RM, CodeModel::Model CM,
                         CodeGenOpt::Level OL);
 
@@ -49,7 +47,7 @@ namespace llvm {
     { return &InstrInfo; }
 
     virtual const InstrItineraryData *getInstrItineraryData() const
-    {  return &InstrItins; }
+    {  return Subtarget.getInstrItineraryData(); }
 
     virtual const TargetFrameLowering *getFrameLowering() const
     { return &FrameLowering; }

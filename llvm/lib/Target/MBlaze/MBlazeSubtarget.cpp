@@ -25,10 +25,11 @@
 
 using namespace llvm;
 
-MBlazeSubtarget::MBlazeSubtarget(StringRef CPU,
+MBlazeSubtarget::MBlazeSubtarget(Triple TT,
+                                 StringRef CPU,
                                  StringRef TuneCPU,
                                  StringRef FS):
-  MBlazeGenSubtargetInfo(getTargetTriple(), CPU, TuneCPU, FS),
+  MBlazeGenSubtargetInfo(TT, CPU, TuneCPU, FS),
   HasBarrel(false), HasDiv(false), HasMul(false), HasPatCmp(false),
   HasFPU(false), HasMul64(false), HasSqrt(false)
 {

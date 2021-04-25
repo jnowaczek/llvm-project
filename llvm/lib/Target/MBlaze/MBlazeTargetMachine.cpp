@@ -14,6 +14,7 @@
 #include "MBlazeTargetMachine.h"
 #include "MBlaze.h"
 #include "llvm/CodeGen/Passes.h"
+#include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/TargetRegistry.h"
@@ -32,17 +33,16 @@ extern "C" void LLVMInitializeMBlazeTarget() {
 // offset from the stack/frame pointer, using StackGrowsUp enables
 // an easier handling.
 MBlazeTargetMachine::
-MBlazeTargetMachine(const Target &T, StringRef TT,
+MBlazeTargetMachine(const Target &T, Triple TT,
                     StringRef CPU, StringRef FS, const TargetOptions &Options,
                     Reloc::Model RM, CodeModel::Model CM,
                     CodeGenOpt::Level OL)
-  : LLVMTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL),
-    Subtarget(TT, CPU, FS),
+  : LLVMTargetMachine(T, "E-p:32:32:32-i8:8:8-i16:16:16", TT, CPU, FS, Options, RM, CM, OL),
+    Subtarget(TT, CPU, CPU, FS),
     DL("E-p:32:32:32-i8:8:8-i16:16:16"),
     InstrInfo(*this),
     FrameLowering(Subtarget),
-    TLInfo(*this), TSInfo(*this),
-    InstrItins(Subtarget.getInstrItineraryData()) {
+    TLInfo(*this), TSInfo(*this) {
   initAsmInfo();
 }
 
@@ -50,7 +50,7 @@ namespace {
 /// MBlaze Code Generator Pass Configuration Options.
 class MBlazePassConfig : public TargetPassConfig {
 public:
-  MBlazePassConfig(MBlazeTargetMachine *TM, PassManagerBase &PM)
+  MBlazePassConfig(MBlazeTargetMachine &TM, PassManagerBase &PM)
     : TargetPassConfig(TM, PM) {}
 
   MBlazeTargetMachine &getMBlazeTargetMachine() const {
@@ -58,12 +58,12 @@ public:
   }
 
   virtual bool addInstSelector();
-  virtual bool addPreEmitPass();
+  virtual void addPreEmitPass();
 };
 } // namespace
 
 TargetPassConfig *MBlazeTargetMachine::createPassConfig(PassManagerBase &PM) {
-  return new MBlazePassConfig(this, PM);
+  return new MBlazePassConfig(*this, PM);
 }
 
 // Install an instruction selector pass using
@@ -76,7 +76,6 @@ bool MBlazePassConfig::addInstSelector() {
 // Implemented by targets that want to run passes immediately before
 // machine code is emitted. return true if -print-machineinstrs should
 // print out the code after the passes.
-bool MBlazePassConfig::addPreEmitPass() {
+void MBlazePassConfig::addPreEmitPass() {
   addPass(createMBlazeDelaySlotFillerPass(getMBlazeTargetMachine()));
-  return true;
 }

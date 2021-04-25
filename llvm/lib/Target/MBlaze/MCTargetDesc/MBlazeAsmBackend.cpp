@@ -157,9 +157,11 @@ void ELFMBlazeAsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixu
 }
 } // end anonymous namespace
 
-MCAsmBackend *llvm::createMBlazeAsmBackend(const Target &T, StringRef TT,
-                                           StringRef CPU) {
-  Triple TheTriple(TT);
+MCAsmBackend *llvm::createMBlazeAsmBackend(const Target &T,
+                                           const MCSubtargetInfo &STI,
+                                           const MCRegisterInfo &MRI,
+                                           const MCTargetOptions &Options) {
+  Triple TheTriple = STI.getTargetTriple();
 
   if (TheTriple.isOSDarwin())
     assert(0 && "Mac not supported on MBlaze");
@@ -168,5 +170,5 @@ MCAsmBackend *llvm::createMBlazeAsmBackend(const Target &T, StringRef TT,
     assert(0 && "Windows not supported on MBlaze");
 
   uint8_t OSABI = MCELFObjectTargetWriter::getOSABI(TheTriple.getOS());
-  return new ELFMBlazeAsmBackend(T, OSABI);
+  return new ELFMBlazeAsmBackend(T, MRI, TheTriple, STI.getCPU());
 }
