@@ -21,9 +21,9 @@ namespace {
 
     virtual ~MBlazeELFObjectWriter();
   protected:
-    virtual unsigned GetRelocType(const MCValue &Target, const MCFixup &Fixup,
+    unsigned getRelocType(const MCValue &Target, const MCFixup &Fixup,
                                   bool IsPCRel, bool IsRelocWithSymbol,
-                                  int64_t Addend) const;
+                                  int64_t Addend) const override;
   };
 }
 
@@ -34,7 +34,7 @@ MBlazeELFObjectWriter::MBlazeELFObjectWriter(uint8_t OSABI)
 MBlazeELFObjectWriter::~MBlazeELFObjectWriter() {
 }
 
-unsigned MBlazeELFObjectWriter::GetRelocType(const MCValue &Target,
+unsigned MBlazeELFObjectWriter::getRelocType(const MCValue &Target,
                                              const MCFixup &Fixup,
                                              bool IsPCRel,
                                              bool IsRelocWithSymbol,

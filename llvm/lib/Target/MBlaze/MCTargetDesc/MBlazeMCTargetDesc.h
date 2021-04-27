@@ -15,14 +15,16 @@
 #define MBLAZEMCTARGETDESC_H
 
 #include "llvm/Support/DataTypes.h"
+#include <memory>
 
 namespace llvm {
 class MCAsmBackend;
 class MCContext;
 class MCInstrInfo;
-class MCObjectWriter;
+class MCObjectTargetWriter;
 class MCRegisterInfo;
 class MCSubtargetInfo;
+class MCTargetOptions;
 class Target;
 class StringRef;
 class raw_ostream;
@@ -34,7 +36,7 @@ MCAsmBackend *createMBlazeAsmBackend(const Target &T,
                                      const MCRegisterInfo &MRI,
                                      const MCTargetOptions &Options);
 
-MCObjectWriter *createMBlazeELFObjectWriter(raw_ostream &OS, uint8_t OSABI);
+std::unique_ptr<MCObjectTargetWriter> createMBlazeELFObjectWriter(raw_ostream &OS, uint8_t OSABI);
 } // End llvm namespace
 
 // Defines symbolic names for MBlaze registers.  This defines a mapping from

@@ -10,8 +10,8 @@ tablegen(LLVM MBlazeGenAsmMatcher.inc -gen-asm-matcher)
 tablegen(LLVM MBlazeGenDAGISel.inc -gen-dag-isel)
 tablegen(LLVM MBlazeGenCallingConv.inc -gen-callingconv)
 tablegen(LLVM MBlazeGenSubtargetInfo.inc -gen-subtarget)
-tablegen(LLVM MBlazeGenIntrinsicsEnums.inc -gen-intrinsic-enums)
-tablegen(LLVM MBlazeGenIntrinsics.inc -gen-intrinsic-impl)
+# tablegen(LLVM MBlazeGenIntrinsicsEnums.inc -gen-intrinsic-enums)
+# tablegen(LLVM MBlazeGenIntrinsics.inc -gen-intrinsic-impl)
 add_public_tablegen_target(MBlazeCommonTableGen)
 
 add_llvm_target(MBlazeCodeGen

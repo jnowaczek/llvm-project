@@ -18,6 +18,7 @@
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSectionELF.h"
 #include "llvm/MC/MCSectionMachO.h"
+#include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCValue.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/TargetRegistry.h"
@@ -137,7 +138,7 @@ void ELFMBlazeAsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixu
   assert(Fixup.getOffset() + Size <= Value &&
          "Invalid fixup offset!");
 
-  char *data = Data + Fixup.getOffset();
+  char *data = (char *) Data.front() + Fixup.getOffset();
   switch (Size) {
   default: llvm_unreachable("Cannot fixup unknown value.");
   case 1:  llvm_unreachable("Cannot fixup 1 byte value.");

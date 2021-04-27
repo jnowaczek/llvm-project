@@ -27,7 +27,7 @@ using namespace llvm;
 
 void MBlazeInstPrinter::printInst(const MCInst *MI, uint64_t Address, StringRef Annot,
                          const MCSubtargetInfo &STI, raw_ostream &OS) {
-  printInstruction(MI, OS);
+  printInstruction(MI, Address, OS);
   printAnnotation(OS, Annot);
 }
 
