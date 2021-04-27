@@ -124,7 +124,7 @@ public:
                           uint64_t Value, bool IsResolved,
                           const MCSubtargetInfo *STI) const;
 
-  MCObjectWriter *createObjectWriter(raw_ostream &OS) const {
+  MCObjectTargetWriter *createObjectWriter(raw_ostream &OS) const {
     return createMBlazeELFObjectWriter(OS, OSABI);
   }
 };
